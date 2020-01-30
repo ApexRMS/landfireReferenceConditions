@@ -5,6 +5,8 @@
 
 ###########################################################################################################################
 # This code:                                                                                                              #
+# - Creates a crosswalk for stage Classes A-E per Model | Cover Type | Structural Stage                                   #
+# - 
 ###########################################################################################################################
 
 #### Workspace ####
@@ -29,6 +31,7 @@ states <- datasheet(scenario, "OutputStratumState") %>%
   arrange(StratumID, Iteration, Timestep)
 transitions <- datasheet(scenario, "OutputStratumTransition") %>%
   arrange(StratumID, Iteration, Timestep)
+names <- datasheet(scenario, "Stratum")
 
 #### Create Class Crosswalk ####
 # Define functions extracting desired attributes from text lines
@@ -62,8 +65,8 @@ for(i in 1:length(models)){
     .[which((substr(., start=1, stop=6) == "Class ") & (grepl(" - ", ., fixed=T)) & (!substr(., start=8, stop=8) == " "))]
   
   # Compile model crosswalk
-  modelCrosswalk <- data.frame(Class = sapply(desc, get.class),
-                               Model = models[i],
+  modelCrosswalk <- data.frame(Model_Code = models[i],
+                               Class = sapply(desc, get.class),
                                CoverType = sapply(desc, get.coverType),
                                StructuralStage = sapply(desc, get.structuralStage),
                                stringsAsFactors = F)
@@ -86,3 +89,7 @@ crosswalk$StructuralStage <- sapply(crosswalk$StructuralStage, function(x){ifels
 
 # Save
 write.csv(crosswalk, paste0(resultsDir, "ClassCrosswalk.csv"), row.names = F)
+
+#### Create Reference Condition Table - PICK UP HERE ####
+table <- data.frame(Model_Code = unique(crosswalk$Model), stringsAsFactors = F)
+table$BpS_Name <- sapply(table$Model_Code, function(x) names$Description[names$Name == x])
