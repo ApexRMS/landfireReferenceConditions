@@ -42,7 +42,11 @@ states <- datasheet(scenario, "OutputStratumState") %>% # Load
   arrange(Model_Code, Iteration, Timestep) # Order records
 
 transitions <- datasheet(scenario, "OutputStratumTransition") %>% # Load
-  arrange(StratumID, Iteration, Timestep) # Order records
+  filter(Timestep == timeStop) %>% # Only retain timesteps of interest
+  filter(TransitionGroupID %in% c("All Fire", "Replacement Fire", "Mixed Fire", "Surface Fire")) %>% # Only retain fire transitions
+  select_if(~!all(is.na(.))) %>% # Remove columns that contain NAs only
+  rename(Model_Code = StratumID) %>% # Rename columns
+  arrange(Model_Code, Iteration, Timestep, TransitionGroupID) # Order records
 
 names <- datasheet(scenario, "Stratum") # Load
 
@@ -97,11 +101,10 @@ ind1_class <- ind1_iteration_class %>%
 table %<>% full_join(., ind1_class, by = "Model_Code")
 
 #### Indicator 2: Average fire frequencies by severity class (Replacement, Mixed, Low) ####
-
+# PICK UP HERE. Keep in mind that I removed all non-fire transitions from transition dataframe!
 
 #### Indicator 3: Average aggregated fire frequency across all severity classes ####
 
 #### Indicator 4: Percent of fires by severity class ####
 
 #### Indicator 5: Fire Regime Group classification ####
-
