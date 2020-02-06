@@ -9,7 +9,7 @@
 # - Computes indicator 1: % of the landscape in each class                                                                #
 # - Computes indicator 2/3: Fire Return Interval per severity class/for all fires                                         #
 # - Computes indicator 4: Percent of fires by severity class                                                              #
-# -
+# - Computes indicator 5: Fire Regime Groups (old and new)                                                                #
 ###########################################################################################################################
 
 #### Workspace ####
@@ -18,6 +18,7 @@ library(rsyncrosim)
 library(tidyverse)
 library(magrittr)
 library(openxlsx)
+library(zoo)
 
 # Directories
 resultsDir <- "E:/Results/"
@@ -29,7 +30,8 @@ timeStop <- 1000 # Last time step of interest for analyses
 
 # Tabular data
 crosswalk <- read.csv(paste0(resultsDir, "ClassCrosswalk.csv"))
-FRG_rules <- read.xlsx("E:/Data/Classification Rules - FRG/Computing AllFireFRI and % Fires.xlsx")
+FRG_rules <- read.xlsx("E:/Data/Classification Rules - FRG/Computing AllFireFRI and % Fires.xlsx", startRow = 11) %>%
+  na.locf()
 
 # ST-Sim outputs
       # Library
@@ -161,7 +163,90 @@ table %<>% full_join(., ind3_transitionGroup, by = "Model_Code")
 rm(ind3_transitionGroup)
 
 #### Indicator 5: Fire Regime Group (FRG) classification ####
+# Compute, for each FRG, min and max FRI_AllFire
+      # Write function
+allFireFRI.minMax <- function(x){
+  x <- substr(x, start=1, stop=gregexpr("years", x, fixed=T)[[1]][1]-2)
+  min <- ifelse(grepl("-", x , fixed=T),
+                as.integer(substr(x, start=1, stop=gregexpr("-", x, fixed=T)[[1]][1]-1)),
+                ifelse(grepl("to", x , fixed=T),
+                       as.integer(substr(x, start=1, stop=gregexpr("to", x, fixed=T)[[1]][1]-1)),
+                       501))
+  max <- ifelse(grepl("-", x , fixed=T),
+                as.integer(substr(x, start=gregexpr("-", x, fixed=T)[[1]][1]+1, stop=nchar(x))),
+                ifelse(grepl("to", x , fixed=T),
+                       as.integer(substr(x, start=gregexpr("to", x, fixed=T)[[1]][1]+2, stop=nchar(x))),
+                       max(table$FRI_AllFire, na.rm=T))) + 1 # Add 1 because otherwise there are gaps between intervals
+  
+  y <- as.vector(c(min, max))
+  return(y)
+}
 
+      # Apply
+FRG_rules[, c("FRI_AllFire_min", "FRI_AllFire_max")] <- t(sapply(FRG_rules$All.Fire.Fire.Return.Interval, allFireFRI.minMax))
+FRG_rules %<>% select(-All.Fire.Fire.Return.Interval)
+
+# Compute, for each FRG, min and max PercentOfFire_ReplacementFire
+      # Write function
+PercentOfFire.ReplacementFire.minMax <- function(x){
+  min <- ifelse(x == "Less than 66.7%",
+                0,
+                ifelse(x == "66.7% or greater",
+                       66.7,
+                       ifelse(x == "Less than 80%",
+                              0,
+                              ifelse(x == "80% or greater",
+                                     80,
+                                     0))))
+  
+  max <- ifelse(x == "Less than 66.7%",
+                66.7,
+                ifelse(x == "66.7% or greater",
+                       101,
+                       ifelse(x == "Less than 80%",
+                              80,
+                              ifelse(x == "80% or greater",
+                                     101,
+                                     101))))
+  y <- as.vector(c(min, max))
+  return(y)
+}
+
+      # Apply
+FRG_rules[, c("PercentOfFire_ReplacementFire_min", "PercentOfFire_ReplacementFire_max")] <- t(sapply(FRG_rules$`%.Replacement.Fire`, PercentOfFire.ReplacementFire.minMax))
+FRG_rules %<>% select(-`%.Replacement.Fire`)
+
+# Compute, for each model, the correct FRG
+      # Write function
+get.FRG <- function(x){
+  if(is.na(table$FRI_AllFire[x])){
+    old <- new <- NA # NA if FRI_AllFire is NA
+    
+  }else{
+    # If PercentOfFires_ReplacementFire is NA, use 0%
+    if(is.na(table$PercentOfFires_ReplacementFire[x])){
+      replFire <- 0
+    }else{
+      replFire <- table$PercentOfFires_ReplacementFire[x]
+    }
+    
+    # Get record corresponding to correct FRG
+    rules <- FRG_rules %>%
+      filter(FRI_AllFire_min <= table$FRI_AllFire[x]) %>% # FRI_AllFire must be equal to or greater than min for FRG
+      filter(FRI_AllFire_max > table$FRI_AllFire[x]) %>% # FRI_AllFire must be strictly lesser than max for FRG
+      filter(PercentOfFire_ReplacementFire_min <= replFire) %>% # PercentOfFires_ReplacementFire must be equal to or greater than min for FRG
+      filter(PercentOfFire_ReplacementFire_max > replFire) # PercentOfFires_ReplacementFire must be strictly lesser than max for FRG
+  
+    # Get FRG names
+    old <- as.character(rules$Original.Fire.Regime.Group)
+    new <- as.character(rules$New.Group.Designation)
+  }
+  final <- as.vector(c(old, new))
+  return(final)
+}
+
+      # Apply
+table[, c('FRG_Old', 'FRG_New')] <- t(sapply(1:nrow(table), get.FRG))
 
 #### Export Reference Condition Table ####
 write.xlsx(table, paste0(resultsDir, "ReferenceConditionTable_", scenarioId, ".xlsx"))
