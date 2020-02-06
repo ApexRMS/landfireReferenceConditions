@@ -249,4 +249,4 @@ get.FRG <- function(x){
 table[, c('FRG_Old', 'FRG_New')] <- t(sapply(1:nrow(table), get.FRG))
 
 #### Export Reference Condition Table ####
-write.xlsx(table, paste0(resultsDir, "ReferenceConditionTable_", scenarioId, ".xlsx"))
+write.csv(table, paste0(resultsDir, "ReferenceConditionTable_", scenarioId, ".csv"), row.names = F)
