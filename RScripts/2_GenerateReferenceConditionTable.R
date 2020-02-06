@@ -5,7 +5,11 @@
 
 ###########################################################################################################################
 # This code:                                                                                                              #
-# - 
+# - Creates a Reference Condition Table with BpS_Code, BpS_Name, and Model_Code                                           #
+# - Computes indicator 1: % of the landscape in each class                                                                #
+# - Computes indicator 2/3: Fire Return Interval per severity class/for all fires                                         #
+# - Computes indicator 4: Percent of fires by severity class                                                              #
+# -
 ###########################################################################################################################
 
 #### Workspace ####
@@ -43,10 +47,12 @@ states <- datasheet(scenario, "OutputStratumState") %>% # Load
 
 transitions <- datasheet(scenario, "OutputStratumTransition") %>% # Load
   filter(Timestep == timeStop) %>% # Only retain timesteps of interest
+  select(-c(Timestep)) %>% # Remove Timestep column (unique value)
   filter(TransitionGroupID %in% c("All Fire", "Replacement Fire", "Mixed Fire", "Surface Fire")) %>% # Only retain fire transitions
   select_if(~!all(is.na(.))) %>% # Remove columns that contain NAs only
-  rename(Model_Code = StratumID) %>% # Rename columns
-  arrange(Model_Code, Iteration, Timestep, TransitionGroupID) # Order records
+  rename(Model_Code = StratumID, MeanTransitionAmount = Amount) %>% # Rename columns
+  mutate(Model_Code = as.character(Model_Code), TransitionGroupID = as.character(TransitionGroupID)) %>% # Factor columns to character
+  arrange(Model_Code, Iteration, TransitionGroupID) # Order records
 
 names <- datasheet(scenario, "Stratum") # Load
 
@@ -60,18 +66,19 @@ table$BpS_Code <- substr(table$Model_Code, start=1, stop=5)
 # Add BpS_Name
 table$BpS_Name <- sapply(table$Model_Code, function(x) names$Description[names$Name == x])
 
-# Re-order columns & Check that all BpS have a name
-table %<>% select(c(BpS_Code, BpS_Name, Model_Code)) # Re-order columns
+# Format columns & Check that all BpS have a name
+table %<>% select(c(BpS_Code, BpS_Name, Model_Code)) %>% # Re-order columns
+  mutate(Model_Code = as.character(Model_Code))
 if((sum(table$BpS_Name == "character(0)") > 0) | (sum(is.na(table$BpS_Name)) > 0)){stop("Some BpS lack names")} # Check that all BpS have a name
 
 #### Indicator 1: % of the landscape in each class ####
 # Add Class label to states dataframe
-# Create a Model_StateClassID identifier
+      # Create a Model_StateClassID identifier
 crosswalk %<>% mutate(StateClassID = paste(CoverType, StructuralStage, sep=":"),
                       Model_StateClassID = paste(Model_Code, StateClassID, sep=":"))
 states %<>% mutate(Model_StateClassId = paste(Model_Code, StateClassID, sep=":"))
 
-# Extract Class
+      # Extract Class
 states$Class <- sapply(states$Model_StateClassId, function(x) crosswalk$Class[crosswalk$Model_StateClassID == x])
 states %<>% select(c(Model_Code, Iteration, Timestep, Class, Amount, AgeMin, AgeMax)) %>%
   mutate(Class = as.character(Class)) %>%
@@ -95,16 +102,66 @@ ind1_class <- ind1_iteration_class %>%
   summarize(MeanPercentage = round(mean(Percentage), 2)) %>%
   ungroup() %>%
   spread(key = Class, value = MeanPercentage) %>%
-  mutate(Model_Code = as.character(Model_Code))
+  mutate(Model_Code = as.character(Model_Code)) %>%
+  rename(ClassA_ReferencePercent = A, ClassB_ReferencePercent = B, ClassC_ReferencePercent = C, ClassD_ReferencePercent = D, ClassE_ReferencePercent = E)
 
 # Join with Reference Condition Table
 table %<>% full_join(., ind1_class, by = "Model_Code")
+rm(ind1_class, ind1_iteration, ind1_iteration_class)
 
-#### Indicator 2: Average fire frequencies by severity class (Replacement, Mixed, Low) ####
-# PICK UP HERE. Keep in mind that I removed all non-fire transitions from transition dataframe!
+#### Indicator 2-3: Fire Return Interval (Replacement, Mixed, Low, and All Fires) ####
+# Compute TimestepAmount = Area of landscape per model | iteration | timestep
+      # Compute
+ind2_iteration_timestep <- states %>%
+  group_by(Model_Code, Iteration, Timestep) %>%
+  summarize(Amount = sum(Amount))
 
-#### Indicator 3: Average aggregated fire frequency across all severity classes ####
+      # Add TimestepAmount to df of model | iteration (since all timesteps per model | iteration have the same area)
+ind2_iteration <- ind2_iteration_timestep %>%
+  group_by(Model_Code, Iteration) %>%
+  summarize(TimestepAmount = unique(Amount)) %>%
+  ungroup() %>%
+  mutate(Model_Code = as.character(Model_Code))
+
+# Compute MeanProportion = Mean proportion of landscape affected by fire every year, per model | iteration | fire type
+transitions %<>% left_join(., ind2_iteration, by=c("Model_Code", "Iteration")) %>% # Add TimestepAmount to transitions
+  mutate(MeanProportion = MeanTransitionAmount/TimestepAmount) # Calculate mean proportion
+
+# Compute Fire Return Interval (FRI)
+ind2_transitionGroup <- ind3_transitionGroup <- transitions %>%
+  group_by(Model_Code, TransitionGroupID) %>%
+  summarize(Mean_MeanProportion = mean(MeanProportion)) %>% # Mean of MeanProportion across all iterations
+  mutate(FRI = 1/Mean_MeanProportion) %>% # Fire Return Interval
+  select(-Mean_MeanProportion) %>% # Remove Mean of MeanProportion
+  spread(key = TransitionGroupID, value = FRI) %>% # Long to wide format
+  rename(FRI_ReplacementFire = "Replacement Fire", FRI_MixedFire = "Mixed Fire", FRI_LowFire = "Surface Fire", FRI_AllFire = "All Fire") %>% # Rename columns
+  select(c(Model_Code, FRI_ReplacementFire, FRI_MixedFire, FRI_LowFire, FRI_AllFire)) # Order columns
+
+# Round FRI values
+ind2_transitionGroup %<>% ungroup() %>%
+  mutate_if(is.numeric, round, 2)
+
+# Join with Reference Condition Table
+table %<>% full_join(., ind2_transitionGroup, by = "Model_Code")
+rm(ind2_iteration_timestep, ind2_iteration, ind2_transitionGroup)
 
 #### Indicator 4: Percent of fires by severity class ####
+# Compute % of fires by severity class
+ind3_transitionGroup %<>% mutate(PercentOfFires_ReplacementFire = 100*FRI_AllFire/FRI_ReplacementFire,
+                                 PercentOfFires_MixedFire = 100*FRI_AllFire/FRI_MixedFire,
+                                 PercentOfFires_LowFire = 100*FRI_AllFire/FRI_LowFire) %>%
+  select(c(Model_Code, PercentOfFires_ReplacementFire, PercentOfFires_MixedFire, PercentOfFires_LowFire))
 
-#### Indicator 5: Fire Regime Group classification ####
+# Round percentages
+ind3_transitionGroup %<>% ungroup() %>%
+  mutate_if(is.numeric, round, 2)
+
+# Join with Reference Condition Table
+table %<>% full_join(., ind3_transitionGroup, by = "Model_Code")
+rm(ind3_transitionGroup)
+
+#### Indicator 5: Fire Regime Group (FRG) classification ####
+
+
+#### Export Reference Condition Table ####
+write.xlsx(table, paste0(resultsDir, "ReferenceConditionTable_", scenarioId, ".xlsx"))
