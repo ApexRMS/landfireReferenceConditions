@@ -129,12 +129,13 @@ ind2_iteration <- ind2_iteration_timestep %>%
 transitions %<>% left_join(., ind2_iteration, by=c("Model_Code", "Iteration")) %>% # Add TimestepAmount to transitions
   mutate(MeanProportion = MeanTransitionAmount/TimestepAmount) # Calculate mean proportion
 
-# Compute Fire Return Interval (FRI)
-ind2_transitionGroup <- ind4_transitionGroup <- transitions %>%
+# Compute Fire Return Interval (FRI) per model | iteration | fire type
+transitions %<>% mutate(FRI = 1/MeanProportion)
+
+# Compute Fire Return Interval (FRI) per model | fire type
+ind2_transitionGroup <- transitions %>%
   group_by(Model_Code, TransitionGroupID) %>%
-  summarize(Mean_MeanProportion = mean(MeanProportion)) %>% # Mean of MeanProportion across all iterations
-  mutate(FRI = 1/Mean_MeanProportion) %>% # Fire Return Interval
-  select(-Mean_MeanProportion) %>% # Remove Mean of MeanProportion
+  summarize(FRI = mean(FRI)) %>% # Mean of FRI across all iterations
   spread(key = TransitionGroupID, value = FRI) %>% # Long to wide format
   rename(FRI_ReplacementFire = "Replacement Fire", FRI_MixedFire = "Mixed Fire", FRI_LowFire = "Surface Fire", FRI_AllFire = "All Fire") %>% # Rename columns
   select(c(Model_Code, FRI_ReplacementFire, FRI_MixedFire, FRI_LowFire, FRI_AllFire)) # Order columns
@@ -148,11 +149,19 @@ table %<>% full_join(., ind2_transitionGroup, by = "Model_Code")
 rm(ind2_iteration_timestep, ind2_iteration, ind2_transitionGroup)
 
 #### Indicator 4: Percent of fires by severity class ####
-# Compute % of fires by severity class
-ind4_transitionGroup %<>% mutate(PercentOfFires_ReplacementFire = 100*FRI_AllFire/FRI_ReplacementFire,
-                                 PercentOfFires_MixedFire = 100*FRI_AllFire/FRI_MixedFire,
-                                 PercentOfFires_LowFire = 100*FRI_AllFire/FRI_LowFire) %>%
-  select(c(Model_Code, PercentOfFires_ReplacementFire, PercentOfFires_MixedFire, PercentOfFires_LowFire))
+# Add MeanProportion_AllFire as separate column in transitions table
+transitions$MeanProportion_AllFire <- sapply(1:nrow(transitions), function(x) transitions$MeanProportion[which((transitions$Model_Code == transitions$Model_Code[x]) & (transitions$Iteration == transitions$Iteration[x]) & (transitions$TransitionGroupID == "All Fire"))])
+
+# Compute % of fires per model | iteration | fire type
+transitions %<>% mutate(PercentOfFires = 100*(MeanProportion/MeanProportion_AllFire))
+
+# Compute % of fires per model | fire type
+ind4_transitionGroup <- transitions %>%
+  group_by(Model_Code, TransitionGroupID) %>%
+  summarize(PercentOfFires = mean(PercentOfFires)) %>% # Mean of PercentOfFires across all iterations
+  spread(key=TransitionGroupID, value=PercentOfFires) %>% # Long to wide format
+  rename(PercentOfFires_ReplacementFire = `Replacement Fire`, PercentOfFires_MixedFire = `Mixed Fire`, PercentOfFires_LowFire = `Surface Fire`) %>% # Rename columns
+  select(c(Model_Code, PercentOfFires_ReplacementFire, PercentOfFires_MixedFire, PercentOfFires_LowFire)) # Order columns
 
 # Round percentages
 ind4_transitionGroup %<>% ungroup() %>%
