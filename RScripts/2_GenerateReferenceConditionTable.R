@@ -96,21 +96,24 @@ ind1_iteration <- states %>%
   summarize(Amount = sum(Amount))
 
 ## NOTE: The following two sections calculate indicator 1 at the iteration level, then average the result across all iterations
-# Area and % of landscape per model | iteration | class
+# % of landscape per model | iteration | class
 ind1_iteration_class <- states %>%
   group_by(Model_Code, Iteration, Class) %>%
   summarize(Amount = sum(Amount))
 ind1_iteration_class$Amount_Iteration <- sapply(1:nrow(ind1_iteration_class), function(x) ind1_iteration$Amount[(ind1_iteration$Model_Code == ind1_iteration_class$Model_Code[x]) & (ind1_iteration$Iteration == ind1_iteration_class$Iteration[x])])
 ind1_iteration_class %<>% mutate(Percentage = 100*Amount/Amount_Iteration)
 
-# Average, for each model, of % across all iterations
+# % of landcape per model | class
 ind1_class <- ind1_iteration_class %>%
   group_by(Model_Code, Class) %>%
-  summarize(MeanPercentage = round(mean(Percentage), 2)) %>%
+  summarize(MeanPercentage = mean(Percentage)) %>% # Mean of % across all iterations
   ungroup() %>%
-  spread(key = Class, value = MeanPercentage) %>%
-  mutate(Model_Code = as.character(Model_Code)) %>%
-  rename(ClassA_ReferencePercent = A, ClassB_ReferencePercent = B, ClassC_ReferencePercent = C, ClassD_ReferencePercent = D, ClassE_ReferencePercent = E)
+  spread(key = Class, value = MeanPercentage) %>% # Long to wide format
+  mutate(Model_Code = as.character(Model_Code)) %>% # Format columns
+  rename(ClassA_ReferencePercent = A, ClassB_ReferencePercent = B, ClassC_ReferencePercent = C, ClassD_ReferencePercent = D, ClassE_ReferencePercent = E) # Rename columns
+
+# Round percentages
+ind1_class %<>% mutate_if(is.numeric, round, 2)
 
 # Join with Reference Condition Table
 table %<>% full_join(., ind1_class, by = "Model_Code")
