@@ -10,6 +10,10 @@
 # - Computes indicator 2/3: Fire Return Interval per severity class/for all fires                                         #
 # - Computes indicator 4: Percent of fires by severity class                                                              #
 # - Computes indicator 5: Fire Regime Groups (old and new)                                                                #
+#                                                                                                                         #
+# NOTE: this version of the code calculates all indicators at the iteration level before averaging across all iterations  #
+# to obtain the model-level indicator. This differs from methods previously implemented by the TNC.                       #
+# Corresponding areas in the code are flagged with the word "NOTE".                                                       #
 ###########################################################################################################################
 
 #### Workspace ####
@@ -91,6 +95,7 @@ ind1_iteration <- states %>%
   group_by(Model_Code, Iteration) %>%
   summarize(Amount = sum(Amount))
 
+## NOTE: The following two sections calculate indicator 1 at the iteration level, then average the result across all iterations
 # Area and % of landscape per model | iteration | class
 ind1_iteration_class <- states %>%
   group_by(Model_Code, Iteration, Class) %>%
@@ -129,6 +134,7 @@ ind2_iteration <- ind2_iteration_timestep %>%
 transitions %<>% left_join(., ind2_iteration, by=c("Model_Code", "Iteration")) %>% # Add TimestepAmount to transitions
   mutate(MeanProportion = MeanTransitionAmount/TimestepAmount) # Calculate mean proportion
 
+## NOTE: The following two sections calculate indicators 2/3 at the iteration level, then average the result across all iterations
 # Compute Fire Return Interval (FRI) per model | iteration | fire type
 transitions %<>% mutate(FRI = 1/MeanProportion)
 
@@ -152,6 +158,7 @@ rm(ind2_iteration_timestep, ind2_iteration, ind2_transitionGroup)
 # Add MeanProportion_AllFire as separate column in transitions table
 transitions$MeanProportion_AllFire <- sapply(1:nrow(transitions), function(x) transitions$MeanProportion[which((transitions$Model_Code == transitions$Model_Code[x]) & (transitions$Iteration == transitions$Iteration[x]) & (transitions$TransitionGroupID == "All Fire"))])
 
+## NOTE: The following two sections calculate indicator 4 at the iteration level, then average the result across all iterations
 # Compute % of fires per model | iteration | fire type
 transitions %<>% mutate(PercentOfFires = 100*(MeanProportion/MeanProportion_AllFire))
 
