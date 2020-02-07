@@ -130,7 +130,7 @@ transitions %<>% left_join(., ind2_iteration, by=c("Model_Code", "Iteration")) %
   mutate(MeanProportion = MeanTransitionAmount/TimestepAmount) # Calculate mean proportion
 
 # Compute Fire Return Interval (FRI)
-ind2_transitionGroup <- ind3_transitionGroup <- transitions %>%
+ind2_transitionGroup <- ind4_transitionGroup <- transitions %>%
   group_by(Model_Code, TransitionGroupID) %>%
   summarize(Mean_MeanProportion = mean(MeanProportion)) %>% # Mean of MeanProportion across all iterations
   mutate(FRI = 1/Mean_MeanProportion) %>% # Fire Return Interval
@@ -149,18 +149,18 @@ rm(ind2_iteration_timestep, ind2_iteration, ind2_transitionGroup)
 
 #### Indicator 4: Percent of fires by severity class ####
 # Compute % of fires by severity class
-ind3_transitionGroup %<>% mutate(PercentOfFires_ReplacementFire = 100*FRI_AllFire/FRI_ReplacementFire,
+ind4_transitionGroup %<>% mutate(PercentOfFires_ReplacementFire = 100*FRI_AllFire/FRI_ReplacementFire,
                                  PercentOfFires_MixedFire = 100*FRI_AllFire/FRI_MixedFire,
                                  PercentOfFires_LowFire = 100*FRI_AllFire/FRI_LowFire) %>%
   select(c(Model_Code, PercentOfFires_ReplacementFire, PercentOfFires_MixedFire, PercentOfFires_LowFire))
 
 # Round percentages
-ind3_transitionGroup %<>% ungroup() %>%
+ind4_transitionGroup %<>% ungroup() %>%
   mutate_if(is.numeric, round, 2)
 
 # Join with Reference Condition Table
-table %<>% full_join(., ind3_transitionGroup, by = "Model_Code")
-rm(ind3_transitionGroup)
+table %<>% full_join(., ind4_transitionGroup, by = "Model_Code")
+rm(ind4_transitionGroup)
 
 #### Indicator 5: Fire Regime Group (FRG) classification ####
 # Compute, for each FRG, min and max FRI_AllFire
