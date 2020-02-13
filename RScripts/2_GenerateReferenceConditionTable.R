@@ -25,7 +25,7 @@ library(openxlsx)
 library(zoo)
 
 # Directories
-resultsDir <- "E:/Results/"
+resultsDir <- "E:/a202/Results/"
 
 # Input Parameters
 scenarioId <- 8807 # Id number of the scenario of interest
@@ -34,12 +34,12 @@ timeStop <- 1000 # Last time step of interest for analyses
 
 # Tabular data
 crosswalk <- read.csv(paste0(resultsDir, "ClassCrosswalk.csv"))
-FRG_rules <- read.xlsx("E:/Data/Classification Rules - FRG/Computing AllFireFRI and % Fires.xlsx", startRow = 11) %>%
+FRG_rules <- read.xlsx("E:/a202/Data/Classification Rules - FRG/Computing AllFireFRI and % Fires.xlsx", startRow = 11) %>%
   na.locf()
 
 # ST-Sim outputs
       # Library
-library <- ssimLibrary("E:/Data/Reference Condition Model Library/LANDFIRE BpS Models 6 Oct 2019-V2-2-4/LANDFIRE BpS Models 6 Oct 2019.ssim")
+library <- ssimLibrary("E:/a202/Data/Reference Condition Model Library/LANDFIRE BpS Models 6 Oct 2019-V2-2-4/LANDFIRE BpS Models 6 Oct 2019.ssim")
 
       # Scenario
 scenario <- scenario(library, scenario = scenarioId)
