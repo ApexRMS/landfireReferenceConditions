@@ -2,3 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+Results/
+Data/
+Tasks/
+RScripts/TemplateScripts/
