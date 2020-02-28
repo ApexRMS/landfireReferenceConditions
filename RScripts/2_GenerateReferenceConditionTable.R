@@ -182,7 +182,7 @@ ind2_transitionGroup <- transitions %>%
 
 # Round FRI values
 ind2_transitionGroup %<>% ungroup() %>%
-  mutate_if(is.numeric, round, 2)
+  mutate_if(is.numeric, round)
 
 # Join with Reference Condition Table
 table %<>% full_join(., ind2_transitionGroup, by = "Model_Code")
