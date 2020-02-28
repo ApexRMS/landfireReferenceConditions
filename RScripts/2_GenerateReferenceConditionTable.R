@@ -62,6 +62,35 @@ transitions <- datasheet(scenario, "OutputStratumTransition") %>% # Load
 
 names <- datasheet(scenario, "Stratum") # Load
 
+# Function: Ensure sum of rounded percentages is equal 100%
+sum.100 <- function(df, cols){
+  
+  # Get row sums
+  totals <- rowSums(df[cols], na.rm=T)
+  
+  # Force each row to sum to 100
+  sapply(1:nrow(df), function(x){
+    row <- df[x, cols] # Get row
+    
+    if((!is.na(totals[x])) && (!totals[x] == 100)){ # If total not equal to 100
+      
+      if(totals[x] > 100){ # If total > 100
+        dif <- totals[x]-100 # Size of excess = dif
+        row[which.max(row)] <- row[which.max(row)]-dif # Remove dif from maximum value
+        
+      }else{ # If total < 100
+        dif <- 100-totals[x] # Size of deficiency = dif
+        row[which.min(row)] <- row[which.min(row)]+dif # Add dif to minimum value
+      }
+      
+      df[x, cols] <<- row # Assign row
+    }
+  })
+  
+  # Return df
+  return(df)
+}
+
 #### Initiate Reference Condition Table ####
 # Start with Model_Code
 table <- data.frame(Model_Code = unique(crosswalk$Model_Code), stringsAsFactors = F)
@@ -112,9 +141,11 @@ ind1_class <- ind1_iteration_class %>%
   mutate(Model_Code = as.character(Model_Code)) %>% # Format columns
   rename(ClassA_ReferencePercent = A, ClassB_ReferencePercent = B, ClassC_ReferencePercent = C, ClassD_ReferencePercent = D, ClassE_ReferencePercent = E) # Rename columns
 
-# Round percentages
-ind1_class %<>% mutate_if(is.numeric, round, 2)
-
+# Adjust percentages: round to nearest integer, force minimum to 1%, ensure sum = 100%
+ind1_class %<>% mutate_if(is.numeric, round) %>% # Round to the nearest integer
+  mutate_if(is.numeric, function(x) ifelse(x==0, 1, x)) %>% # Force 0 values to 1%
+  sum.100(., 2:6) # Ensure sum = 100%
+  
 # Join with Reference Condition Table
 table %<>% full_join(., ind1_class, by = "Model_Code")
 rm(ind1_class, ind1_iteration, ind1_iteration_class)
