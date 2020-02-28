@@ -106,7 +106,7 @@ table %<>% select(c(BpS_Code, BpS_Name, Model_Code)) %>% # Re-order columns
   mutate(Model_Code = as.character(Model_Code))
 if((sum(table$BpS_Name == "character(0)") > 0) | (sum(is.na(table$BpS_Name)) > 0)){stop("Some BpS lack names")} # Check that all BpS have a name
 
-#### Indicator 1: % of the landscape in each class ####
+#### Indicator 1: Percent of landscape in each class ####
 # Add Class label to states dataframe
       # Create a Model_StateClassID identifier
 crosswalk %<>% mutate(StateClassID = paste(CoverType, StructuralStage, sep=":"),
@@ -202,11 +202,13 @@ ind4_transitionGroup <- transitions %>%
   summarize(PercentOfFires = mean(PercentOfFires)) %>% # Mean of PercentOfFires across all iterations
   spread(key=TransitionGroupID, value=PercentOfFires) %>% # Long to wide format
   rename(PercentOfFires_ReplacementFire = `Replacement Fire`, PercentOfFires_MixedFire = `Mixed Fire`, PercentOfFires_LowFire = `Surface Fire`) %>% # Rename columns
-  select(c(Model_Code, PercentOfFires_ReplacementFire, PercentOfFires_MixedFire, PercentOfFires_LowFire)) # Order columns
+  select(c(Model_Code, PercentOfFires_ReplacementFire, PercentOfFires_MixedFire, PercentOfFires_LowFire)) %>% # Order columns
+  ungroup()
 
-# Round percentages
-ind4_transitionGroup %<>% ungroup() %>%
-  mutate_if(is.numeric, round, 2)
+# Adjust percentages: round to nearest integer, force minimum to 1%, ensure sum = 100%
+ind4_transitionGroup %<>% mutate_if(is.numeric, round) %>% # Round to the nearest integer
+  mutate_if(is.numeric, function(x) ifelse(x==0, 1, x)) %>% # Force 0 values to 1%
+  sum.100(., 2:4) # Ensure sum = 100%
 
 # Join with Reference Condition Table
 table %<>% full_join(., ind4_transitionGroup, by = "Model_Code")
