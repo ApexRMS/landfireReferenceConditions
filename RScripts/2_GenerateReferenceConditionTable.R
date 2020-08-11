@@ -25,21 +25,21 @@ library(openxlsx)
 library(zoo)
 
 # Directories
-resultsDir <- "E:/a202/Results/"
+resultsDir <- "C:/Users/leona/Documents/Apex Projects/A202 - TNC LANDFIRE Support/Results/"
 
 # Input Parameters
-scenarioId <- 8807 # Id number of the scenario of interest
+scenarioId <- 8808 # Id number of the scenario of interest
 timeStart <- 501 # First time step of interest for analyses
 timeStop <- 1000 # Last time step of interest for analyses
 
 # Tabular data
 crosswalk <- read.csv(paste0(resultsDir, "ClassCrosswalk.csv"))
-FRG_rules <- read.xlsx("E:/a202/Data/Classification Rules - FRG/Computing AllFireFRI and % Fires.xlsx", startRow = 11) %>%
+FRG_rules <- read.xlsx("C:/Users/leona/Documents/Apex Projects/A202 - TNC LANDFIRE Support/Data/Classification Rules - FRG/Computing AllFireFRI and % Fires.xlsx", startRow = 11) %>%
   na.locf()
 
 # ST-Sim outputs
       # Library
-library <- ssimLibrary("E:/a202/Data/Reference Condition Model Library/LANDFIRE BpS Models 6 Oct 2019-V2-2-4/LANDFIRE BpS Models 6 Oct 2019.ssim")
+library <- ssimLibrary("C:/Users/leona/Documents/Apex Projects/A202 - TNC LANDFIRE Support/Data/Reference Condition Model Library/LANDFIRE BpS Models 3 August 2020.ssim")
 
       # Scenario
 scenario <- scenario(library, scenario = scenarioId)
@@ -112,9 +112,13 @@ if((sum(table$BpS_Name == "character(0)") > 0) | (sum(is.na(table$BpS_Name)) > 0
 crosswalk %<>% mutate(StateClassID = paste(CoverType, StructuralStage, sep=":"),
                       Model_StateClassID = paste(Model_Code, StateClassID, sep=":"))
 states %<>% mutate(Model_StateClassId = paste(Model_Code, StateClassID, sep=":"))
+crosswalkSmall = select(crosswalk, Model_StateClassID, Class)
+crosswalkSmall = rename(crosswalkSmall, Model_StateClassId = Model_StateClassID)
+
+states = left_join(states, crosswalkSmall)
 
       # Extract Class
-states$Class <- sapply(states$Model_StateClassId, function(x) crosswalk$Class[crosswalk$Model_StateClassID == x])
+# states$Class <- sapply(states$Model_StateClassId, function(x) crosswalk$Class[crosswalk$Model_StateClassID == x])
 states %<>% select(c(Model_Code, Iteration, Timestep, Class, Amount, AgeMin, AgeMax)) %>%
   mutate(Class = as.character(Class)) %>%
   arrange(Model_Code, Iteration, Timestep, Class)
@@ -132,7 +136,7 @@ ind1_iteration_class <- states %>%
 ind1_iteration_class$Amount_Iteration <- sapply(1:nrow(ind1_iteration_class), function(x) ind1_iteration$Amount[(ind1_iteration$Model_Code == ind1_iteration_class$Model_Code[x]) & (ind1_iteration$Iteration == ind1_iteration_class$Iteration[x])])
 ind1_iteration_class %<>% mutate(Percentage = 100*Amount/Amount_Iteration)
 
-# % of landcape per model | class
+# % of landscape per model | class
 ind1_class <- ind1_iteration_class %>%
   group_by(Model_Code, Class) %>%
   summarize(MeanPercentage = mean(Percentage)) %>% # Mean of % across all iterations
@@ -299,6 +303,9 @@ get.FRG <- function(x){
 
       # Apply
 table[, c('FRG_Old', 'FRG_New')] <- t(sapply(1:nrow(table), get.FRG))
+table = select(table, BpS_Code, BpS_Name, Model_Code, ClassA_ReferencePercent, ClassB_ReferencePercent, ClassC_ReferencePercent, ClassD_ReferencePercent, ClassE_ReferencePercent, FRI_ReplacementFire, FRI_MixedFire, FRI_LowFire, FRI_AllFire, PercentOfFires_ReplacementFire,PercentOfFires_MixedFire, PercentOfFires_LowFire, FRG_Old, FRG_New) 
+table$BpS_Name = as.character(table$BpS_Name)
 
 #### Export Reference Condition Table ####
 write.csv(table, paste0(resultsDir, "ReferenceConditionTable_", scenarioId, ".csv"), row.names = F)
+
