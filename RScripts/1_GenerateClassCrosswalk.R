@@ -16,8 +16,8 @@ library(magrittr)
 library(textreadr)
 
 # Directories
-docDir <- "E:/Data/Model Description Docs/BpSDocs_Parsed/"
-resultsDir <- "E:/Results/"
+docDir <- "C:/Users/leona/Documents/Apex Projects/A202 - TNC LANDFIRE Support/Data/Model Description Docs/"
+resultsDir <- "C:/Users/leona/Documents/Apex Projects/A202 - TNC LANDFIRE Support/Results/"
 
 #### Create Class Crosswalk ####
 # Define functions extracting desired attributes from text lines
@@ -46,9 +46,10 @@ models <- list.files(docDir, pattern=".docx") %>%
 
 # For each model, extract crosswalk from corresponding Word doc
 for(i in 1:length(models)){
+  # i = 1
   # Extract text lines from Word doc
   desc <- read_docx(paste0(docDir, models[i], ".docx")) %>%
-    .[which((substr(., start=1, stop=6) == "Class ") & (grepl(" - ", ., fixed=T)) & (!substr(., start=8, stop=8) == " "))]
+    .[which((substr(., start=1, stop=6) == "Class ") & (grepl(" - ", ., fixed=T)) & (!substr(., start=8, stop=9) == " ")& (!is.na(as.numeric(substr(., start=9, stop=10)))))]
   
   # Compile model crosswalk
   modelCrosswalk <- data.frame(Model_Code = models[i],
