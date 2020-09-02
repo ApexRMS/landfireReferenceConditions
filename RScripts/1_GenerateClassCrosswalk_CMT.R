@@ -67,7 +67,6 @@ for(i in 1:length(models)) {
 
   	#Search for text descriptions within each Class' section.
   	#Use 'Maximum Tree' header as description endpoint; 
-  	#Account for missing endpoints by using next Class header as end point. 
   	
   	 # Identify start points for description of document as start point. 
   	 #Some documents have extra description header, remove  	
@@ -136,8 +135,11 @@ crosswalk$Model_Code <- gsub("_RS", "", crosswalk$Model_Code)
   # Structural stage
 	crosswalk$StructuralStage <- sapply(crosswalk$StructuralStage, function(x){ifelse(x %in% c("All Structures", "All", " All"), "ALL", ifelse(x == "Closed", "CLS", "OPN"))})
 
+	#Cover type
+	crosswalk$CoverType <- gsub("Early 1", "Early1", crosswalk$CoverType)
+
 	# Text description
 	crosswalk$Description <- gsub("  ", " ", crosswalk$Description)
 
 ## Save
-write.csv(crosswalk, paste0(resultsDir, "ClassCrosswalk.csv"), row.names = F)
+write.csv(crosswalk, paste0(resultsDir, "ClassCrosswalk-09-02-2020.csv"), row.names = F)
