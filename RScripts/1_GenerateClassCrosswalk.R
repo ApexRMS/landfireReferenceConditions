@@ -109,7 +109,7 @@ for(i in 1:length(models)) {
 	    maxTree <- rep(NA, length(descriptionPos))
 	  } else {
 	    # If there are fewer then expected maxTreePos, 
-	    ## compare positions to assign data
+	    # compare positions to assign data
 	    maxTree <- vector()
 	    expectedLength <- length(descriptionPos)
 	    maxTreeEntry <- 1
