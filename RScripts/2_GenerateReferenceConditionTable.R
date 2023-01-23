@@ -34,6 +34,7 @@ timeStop <- 1000 # Last time step of interest for analyses
 
 # Tabular data
 crosswalk <- read.csv(paste0(resultsDir, "ClassCrosswalk.csv"))
+# File is available from https://github.com/ApexRMS/landfireReferenceConditions/blob/master/Data/Tabular
 FRG_rules <- read.xlsx("C:/Users/leona/Documents/Apex Projects/A202 - TNC LANDFIRE Support/Data/Classification Rules - FRG/Computing AllFireFRI and % Fires.xlsx", startRow = 11) %>%
   na.locf()
 
