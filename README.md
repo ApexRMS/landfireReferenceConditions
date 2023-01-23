@@ -1,4 +1,7 @@
-# a202
-TNC LANDFIRE support scripts including scripts to:
-1. Create a reference condition table based on LANDFIRE reference condition ST-Sim library; and
-2. Validate that LANDFIRE reference condition models produce the same results following a SyncroSim/ST-Sim version upgrade
+# LANDFIRE Reference Conditions
+
+This repository contains R scripts to support extracting information from the LANDFIRE [Biophysical Settings (BpS) models](https://landfire.gov/bps-models.php) and model descriptions.
+
+The script **1_GenerateClassCrosswalk.R** creates a .csv table with [succession class](https://landfire.gov/sclass.php) information (*i.e.*, class, cover type, structural stage, maximum tree size class, and description) based on the LANDFIRE reference condition model descriptions. The script takes as input a folder with Word documents describing each BpS model. Files are available for direct download [here](https://www.landfire.gov/zip/LANDFIRE_CONUS_HI_BpS_Descriptions_May2022.zip).
+
+The script **2_GenerateReferenceConditionTable.R** creates a .csv table with 5 indicators used to validate that the LANDFIRE reference condition models produce identical results following SyncroSim and ST-Sim software version upgrades. The script takes as input the .csv file produced by **1_GenerateClassCrosswalk.R**, a tabular dataset on fire regime calculations available from the repository, and a ST-Sim library available for direct download [here](https://www.landfire.gov/zip/LANDFIRE_CONUS_BpS_Models_August_2020.zip).
