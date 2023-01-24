@@ -15,15 +15,17 @@
 # Packages
 library(tidyverse)
 library(magrittr)
+
+# Note textreadr is no longer available on CRAN only CRAN archive
 library(textreadr)
 library(stringr)
 
 
 #### Directories
 # Specify docDir to the folder with all documents with model descriptions, ex.:
-docDir <- "~/Dropbox/Documents/ApexRMS/Work/a202/Model Description Docs/"
+docDir <- "./Docs/"
 # Specify resultsDir to the folder where the outputs should be saved, ex.:
-resultsDir <- "~/Dropbox/Documents/ApexRMS/Work/a202/A202 - TNC LANDFIRE Support/Results/"
+resultsDir <- "./Results/"
 
 
 #### Create Class Crosswalk 
