@@ -15,9 +15,7 @@
 # Packages
 library(tidyverse)
 library(magrittr)
-
-# Note textreadr is no longer available on CRAN only CRAN archive
-library(textreadr)
+library(qdapTools)
 library(stringr)
 
 
@@ -57,7 +55,7 @@ get.maxTreeSizeClass <- function(x){
      !grepl("No data", x, fixed=T) &
      !grepl("None", x, fixed=T) & 
      nchar(x) > 23){
-    start <- str_locate_all(x, "[A-Z]")[[1]][5,1]
+    start <- str_locate_all(x, "[A-Z]")[[1]][4,1] + 5
     stop <- nchar(x)
     y <- substr(x, start=start, stop=stop)
   } else {
@@ -74,7 +72,7 @@ models <- list.files(docDir, pattern=".docx") %>%
 ## For each model, extract crosswalk from corresponding Word doc
 for(i in 1:length(models)) { 
   
-  docu <- textreadr::read_docx(paste0(docDir, models[i], ".docx"))
+  docu <- read_docx(paste0(docDir, models[i], ".docx"))
   
   # Collect data from lines beginning with "Class ", 
   # then omit NAs and missing data 
