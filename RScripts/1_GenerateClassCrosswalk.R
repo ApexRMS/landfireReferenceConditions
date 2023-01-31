@@ -247,5 +247,5 @@ crosswalk$Model_Code <- gsub("_RS", "", crosswalk$Model_Code)
 
 ## Save
 write.csv(crosswalk, 
-          paste0(resultsDir, "ClassCrosswalk-01-20-2023.csv"), 
+          paste0(resultsDir, "ClassCrosswalk-", Sys.Date(), ".csv"), 
           row.names = F)
