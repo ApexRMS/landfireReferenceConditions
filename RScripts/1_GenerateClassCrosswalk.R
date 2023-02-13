@@ -11,67 +11,17 @@
 #   Structural Stage, Maximum Tree Size Class, and Description                 #
 ################################################################################
 
-#### Workspace ####
-# Packages
-library(tidyverse)
-library(magrittr)
-library(qdapTools)
-library(stringr)
+#### Load constants
+source("RScripts/0_Constants.R")
 
+#### Create crosswalk
 
-#### Directories
-# Specify docDir to the folder with all documents with model descriptions, ex.:
-docDir <- "./Docs/"
-# Specify resultsDir to the folder where the outputs should be saved, ex.:
-resultsDir <- "./Results/"
-
-
-#### Create Class Crosswalk 
-## Define functions extracting desired attributes from text lines
-      # Attribute: Class
-get.class <- function(x){ # should be generalized
-  substr(x, start=7, stop=7)
-}
-
-      # Attribute: Cover Type
-get.coverType <- function(x){
-  start <- str_locate_all(x, "[A-Z]")[[1]][3,1]
-  stop <- str_locate_all(x, " - ")[[1]][1,1]-1
-  y <- substr(x, start=start, stop=stop)
-}
-
-      # Attribute: Structural Stage
-get.structuralStage <- function(x){
-  start <- str_locate_all(x, " - ")[[1]][1,1]+3
-  stop <- nchar(x)
-  y <- substr(x, start=start, stop=stop)
-}
-
-      # Attribute: Max Tree Size Class
-get.maxTreeSizeClass <- function(x){
-  if(!is.na(x) &                         # null data variations are given NA
-     !grepl("no data", x, fixed=T) &
-     !grepl("No Data", x, fixed=T) &
-     !grepl("No data", x, fixed=T) &
-     !grepl("None", x, fixed=T) & 
-     nchar(x) > 23){
-    start <- str_locate_all(x, "[A-Z]")[[1]][4,1] + 5
-    stop <- nchar(x)
-    y <- substr(x, start=start, stop=stop)
-  } else {
-    y <- NA
-  }
-}
-
-## Get all model names
-models <- list.files(docDir, pattern=".docx") %>%
-  			substr(., start=1, stop=nchar(.)-5) # gets all text in name before .docx
-
-#i <- which(models=="13110_50")
+#i <- which(models=="11770_3")
 
 ## For each model, extract crosswalk from corresponding Word doc
 for(i in 1:length(models)) { 
   
+  # Read in document
   docu <- read_docx(paste0(docDir, models[i], ".docx"))
   
   # Collect data from lines beginning with "Class ", 
