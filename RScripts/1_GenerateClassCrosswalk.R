@@ -20,14 +20,19 @@ source("RScripts/0_Constants.R")
 
 ## For each model, extract crosswalk from corresponding Word doc
 for(i in 1:length(models)) { 
-  
   # Read in document
-  docu <- read_docx(paste0(docDir, models[i], ".docx"))
+  docu <- readtext(paste0(docDir, models[i], ".docx")) %>%
+  	# Actual text is in column of a data.frame, pull it out
+  	pull(text) %>%
+  	# All the text is currently in a single string, but we want it split by line
+  	str_split(("\n")) %>%
+  	# Output is in a list structure we don't need, pluck out the first element
+  	pluck(1)
   
   # Collect data from lines beginning with "Class ", 
   # then omit NAs and missing data 
   classPos <- which((substr(docu, start=1, stop=6) == "Class ")
-                    & (grepl(" - ", docu, fixed=T))
+                    & (grepl(" [-–] ", docu))
                     & (!substr(docu, start=8, stop=9) == " ")
                     & (!is.na(as.numeric(substr(docu, start=8, stop=8)))))
   classes <- docu[classPos]

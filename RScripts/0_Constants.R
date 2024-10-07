@@ -14,8 +14,7 @@
 library(tidyverse)
 library(magrittr)
 library(qdapTools)
-library(stringr)
-library(docxtractr)
+library(readtext)
 
 #### Directories ---------------------------------------------------------------
 
