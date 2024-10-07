@@ -116,7 +116,7 @@ for(i in 1:length(models)) {
 	                                    stop=18) == "Model Parameters"),
 	                       which(substr(docu, 
 	                                    start=1, 
-	                                    stop=12) == "References")))
+	                                    stop=10) == "References")))
 		endPos <- vector()			
 		for(k in 1:length(descriptionPos)){
 		  mp <- ifelse((k == length(descriptionPos)), 

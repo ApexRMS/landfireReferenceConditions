@@ -116,6 +116,11 @@ states %<>% mutate(Model_StateClassId = paste(Model_Code, StateClassID, sep=":")
 crosswalkSmall = select(crosswalk, Model_StateClassID, Class)
 crosswalkSmall = rename(crosswalkSmall, Model_StateClassId = Model_StateClassID)
 
+# Check that the crosswalk accounts for every model, cover type, and structural class combination in the scenario
+missing_combinations <- setdiff(states$Model_StateClassId, crosswalkSmall$Model_StateClassId)
+if(length(missing_combinations) > 0)
+  stop("One or more combinations of Model, Cover Type, and Structural Class in the scenario are not represented in the crosswalk.")
+
 states = left_join(states, crosswalkSmall)
 
       # Extract Class

@@ -39,12 +39,12 @@ get.class <- function(x){
 # Cover Type
 get.coverType <- function(x){
   start <- str_locate_all(x, "[A-Z]")[[1]][3,1]
-  stop <- str_locate_all(x, " - ")[[1]][1,1]-1
+  stop <- str_locate_all(x, " [-–] ")[[1]][1,1]-1
   y <- substr(x, start=start, stop=stop)
 }
 # Structural Stage
 get.structuralStage <- function(x){
-  start <- str_locate_all(x, " - ")[[1]][1,1]+3
+  start <- str_locate_all(x, " [-–] ")[[1]][1,1]+3
   stop <- nchar(x)
   y <- substr(x, start=start, stop=stop)
 }
