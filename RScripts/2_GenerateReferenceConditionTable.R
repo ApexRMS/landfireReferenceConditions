@@ -25,22 +25,27 @@ library(openxlsx)
 library(zoo)
 
 # Directories
-resultsDir <- "C:/Users/leona/Documents/Apex Projects/A202 - TNC LANDFIRE Support/Results/"
+resultsDir <- "./Results/"
+dataDir <- "./Data/"
+libraryDir <- "./Library/"
+libraryPath <- paste0(libraryDir, "LANDFIRE Alaska19Sept2024.ssim")
 
 # Input Parameters
-scenarioId <- 8808 # Id number of the scenario of interest
+scenarioId <- 8966 # Id number of the scenario of interest
 timeStart <- 501 # First time step of interest for analyses
 timeStop <- 1000 # Last time step of interest for analyses
 
 # Tabular data
-crosswalk <- read.csv(paste0(resultsDir, "ClassCrosswalk.csv"))
-# File is available from https://github.com/ApexRMS/landfireReferenceConditions/blob/master/Data/Tabular
-FRG_rules <- read.xlsx("C:/Users/leona/Documents/Apex Projects/A202 - TNC LANDFIRE Support/Data/Classification Rules - FRG/Computing AllFireFRI and % Fires.xlsx", startRow = 11) %>%
-  na.locf()
+crosswalk <- list.files(resultsDir, pattern = "ClassCrosswalk", full.names = T) %>% # Dates are now appended to class crosswalk names
+  tail(1) %>% # Only use the latest
+  read_csv
+
+# Load FRG Rules
+FRG_rules <- read.csv(paste0(dataDir, "Computing AllFireFRI and Percent Fires.csv"))
 
 # ST-Sim outputs
       # Library
-library <- ssimLibrary("C:/Users/leona/Documents/Apex Projects/A202 - TNC LANDFIRE Support/Data/Reference Condition Model Library/LANDFIRE BpS Models 3 August 2020.ssim")
+library <- ssimLibrary(libraryPath)
 
       # Scenario
 scenario <- scenario(library, scenario = scenarioId)
@@ -275,8 +280,8 @@ PercentOfFire.ReplacementFire.minMax <- function(x){
 }
 
       # Apply
-FRG_rules[, c("PercentOfFire_ReplacementFire_min", "PercentOfFire_ReplacementFire_max")] <- t(sapply(FRG_rules$`%.Replacement.Fire`, PercentOfFire.ReplacementFire.minMax))
-FRG_rules %<>% select(-`%.Replacement.Fire`)
+FRG_rules[, c("PercentOfFire_ReplacementFire_min", "PercentOfFire_ReplacementFire_max")] <- t(sapply(FRG_rules$Percent.Replacement.Fire, PercentOfFire.ReplacementFire.minMax))
+FRG_rules %<>% select(-Percent.Replacement.Fire)
 
 # Compute, for each model, the correct FRG
       # Write function

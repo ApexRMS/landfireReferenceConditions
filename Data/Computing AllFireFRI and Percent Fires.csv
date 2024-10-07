@@ -1,0 +1,13 @@
+Original Fire Regime Group,New Group Designation,All Fire Fire Return Interval,Percent Replacement Fire
+I,I-A,0 - 5 years,Less than 66.7%
+I,I-B,6 - 15 years,Less than 66.7%
+I,I-C,16 - 35 years,Less than 66.7%
+II,II-A,0 - 5 years,66.7% or greater
+II,II-B,6 - 15 years,66.7% or greater
+II,II-C,16 - 35 years,66.7% or greater
+III,III-A,36 - 100 years,Less than 80%
+III,III-B,101- 200 years,Less than 66.7%
+IV,IV-A,36 - 100 years,80% or greater
+IV,IV-B,101- 200 years,66.7% or greater
+V,V-A,201 to 500 years,Any severity
+V,V-B,501+ years ,Any severity
