@@ -33,10 +33,12 @@ source("RScripts/0_Functions.R")
 resultsDir <- "./Results/"
 dataDir <- "./Data/"
 libraryDir <- "./Library/"
-libraryPath <- paste0(libraryDir, "LANDFIRE Alaska19Sept2024.ssim")
+#libraryPath <- paste0(libraryDir, "LANDFIRE Alaska19Sept2024.ssim")
+libraryPath <- paste0(libraryDir, "reference-condition-model.ssim")
 
 # Input Parameters
-scenarioId <- 8966 # Id number of the scenario of interest
+#scenarioId <- 8966 # Id number of the scenario of interest
+scenarioId <- 8808 # reference conditions All Models scenario
 timeStart <- 501 # First time step of interest for analyses
 timeStop <- 1000 # Last time step of interest for analyses
 
