@@ -129,7 +129,6 @@ crosswalk %<>%
 states %<>%
   mutate(Model_StateClassId = paste(Model_Code, StateClassId, sep = ":"))
 crosswalkSmall = select(crosswalk, Model_StateClassId, Class)
-crosswalkSmall = rename(crosswalkSmall, Model_StateClassId)
 
 # Check that the crosswalk accounts for every model, cover type, and structural class combination in the scenario
 missing_combinations <- setdiff(
