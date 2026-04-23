@@ -34,7 +34,7 @@ resultsDir <- "./Results/"
 dataDir <- "./Data/"
 libraryDir <- "./Library/"
 #libraryPath <- paste0(libraryDir, "LANDFIRE Alaska19Sept2024.ssim")
-libraryPath <- paste0(libraryDir, "reference-condition-model.ssim")
+libraryPath <- paste0(libraryDir, "reference-condition-models.ssim")
 
 # Input Parameters
 #scenarioId <- 8966 # Id number of the scenario of interest
@@ -219,11 +219,20 @@ ind2_iteration <- ind2_iteration_timestep %>%
 # Compute MeanProportion = Mean proportion of landscape affected by fire every year, per model | iteration | fire type
 transitions %<>%
   left_join(., ind2_iteration, by = c("Model_Code", "Iteration")) %>% # Add TimestepAmount to transitions
-  mutate(MeanProportion = MeanTransitionAmount / TimestepAmount) # Calculate mean proportion
+  #mutate(MeanProportion = MeanTransitionAmount / TimestepAmount) # Calculate mean proportion'
+  mutate(
+    MeanProportion = ifelse(
+      TimestepAmount > 0,
+      MeanTransitionAmount / TimestepAmount,
+      NA_real_
+    )
+  ) # Calculate mean proportion while avoiding error if amount = 0
 
 ## NOTE: The following two sections calculate indicators 2/3 at the iteration level, then average the result across all iterations
 # Compute Fire Return Interval (FRI) per model | iteration | fire type
-transitions %<>% mutate(FRI = 1 / MeanProportion)
+#transitions %<>% mutate(FRI = 1 / MeanProportion)
+transitions %<>%
+  mutate(FRI = ifelse(MeanProportion > 0, 1 / MeanProportion, NA_real_)) # avoids issues with amount 0
 
 # Compute Fire Return Interval (FRI) per model | fire type
 ind2_transitionGroup <- transitions %>%
@@ -271,7 +280,14 @@ transitions %<>%
 ## NOTE: The following two sections calculate indicator 4 at the iteration level, then average the result across all iterations
 # Compute % of fires per model | iteration | fire type
 transitions %<>%
-  mutate(PercentOfFires = 100 * (MeanProportion / MeanProportion_AllFire))
+  #mutate(PercentOfFires = 100 * (MeanProportion / MeanProportion_AllFire))
+  mutate(
+    PercentOfFires = ifelse(
+      MeanProportion_AllFire > 0,
+      100 * (MeanProportion / MeanProportion_AllFire),
+      NA_real_
+    )
+  )
 
 # Compute % of fires per model | fire type
 ind4_transitionGroup <- transitions %>%
