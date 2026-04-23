@@ -33,12 +33,12 @@ source("RScripts/0_Functions.R")
 resultsDir <- "./Results/"
 dataDir <- "./Data/"
 libraryDir <- "./Library/"
-#libraryPath <- paste0(libraryDir, "LANDFIRE Alaska19Sept2024.ssim")
-libraryPath <- paste0(libraryDir, "reference-condition-models.ssim")
+#libraryPath <- paste0(libraryDir, "LANDFIRE Alaska19Sept2024.ssim") # original script library
+libraryPath <- paste0(libraryDir, "reference-condition-models.ssim") # landfireReferenceConditions template library
 
 # Input Parameters
-#scenarioId <- 8966 # Id number of the scenario of interest
-scenarioId <- 8808 # reference conditions All Models scenario
+#scenarioId <- 8966 # Id number of the scenario of interest from LANDFIRE Alaska19Sept2024.ssim library
+scenarioId <- 8808 # reference conditions template library, All Models scenario
 timeStart <- 501 # First time step of interest for analyses
 timeStop <- 1000 # Last time step of interest for analyses
 
@@ -129,7 +129,7 @@ crosswalk %<>%
 states %<>%
   mutate(Model_StateClassId = paste(Model_Code, StateClassId, sep = ":"))
 crosswalkSmall = select(crosswalk, Model_StateClassId, Class)
-crosswalkSmall = rename(crosswalkSmall, Model_StateClassId = Model_StateClassId)
+crosswalkSmall = rename(crosswalkSmall, Model_StateClassId)
 
 # Check that the crosswalk accounts for every model, cover type, and structural class combination in the scenario
 missing_combinations <- setdiff(
