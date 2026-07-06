@@ -12,7 +12,7 @@
 ################################################################################
 
 #### Load constants
-source(".RScripts/0_Constants.R")
+source("0_Constants.R")
 
 #### Create crosswalk
 
@@ -213,12 +213,23 @@ if (!dir.exists(resultsDir)) {
   dir.create(resultsDir)
 }
 
-# Column headers match the SuccessionClassDescription datasheet column names
-#   StratumID    -> stsim_Stratum      (Model code)
-#   ClassLabelID -> ClassLabel         (A-E)
-#   StateClassID -> stsim_StateClass   (CoverType:StructuralStage)
-#   Description  -> free text
-output <- data.frame(
+# 1) Class crosswalk for downstream analysis. Script 2 reads the latest file
+#    matching "ClassCrosswalk" and starts from crosswalk$Model_Code, then builds
+#    StateClassId from CoverType/StructuralStage, so keep the original columns.
+write.csv(
+  crosswalk,
+  paste0(resultsDir, "ClassCrosswalk-", Sys.Date(), ".csv"),
+  row.names = F
+)
+
+# 2) SyncroSim import file for the landfirevegmodels SuccessionClassDescription
+#    datasheet. Headers match the datasheet column names; values are the lookup
+#    Names, which SyncroSim resolves to Ids on import:
+#      StratumID    -> stsim_Stratum      (Model code)
+#      ClassLabelID -> ClassLabel         (A-E)
+#      StateClassID -> stsim_StateClass   (CoverType:StructuralStage)
+#      Description  -> free text
+sclassDescription <- data.frame(
   StratumID    = crosswalk$Model_Code,
   ClassLabelID = crosswalk$Class,
   StateClassID = paste0(crosswalk$CoverType, ":", crosswalk$StructuralStage),
@@ -228,7 +239,7 @@ output <- data.frame(
 )
 
 write.csv(
-  output,
-  paste0(resultsDir, "ClassCrosswalk-", Sys.Date(), ".csv"),
+  sclassDescription,
+  paste0(resultsDir, "SuccessionClassDescription-", Sys.Date(), ".csv"),
   row.names = F
 )
