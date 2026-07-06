@@ -63,6 +63,3 @@ get.maxTreeSizeClass <- function(x){
     y <- NA
   }
 }
-
-
-
