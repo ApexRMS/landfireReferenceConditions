@@ -1,6 +1,6 @@
 #### a202 - TNC LANDFIRE Support
 #### Script by Chloé Debyser
-#### Updated by Caroline Tucker 09/2020 & Carina Firkowski 01/2023
+#### Updated by Caroline Tucker 09/2020 , Carina Firkowski 01/2023, Kerry Roe 06/2026
 
 #### 1. Generate Class Crosswalk
 
