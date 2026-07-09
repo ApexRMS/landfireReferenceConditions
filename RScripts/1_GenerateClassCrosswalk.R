@@ -12,7 +12,7 @@
 ################################################################################
 
 #### Load constants
-source("0_Constants.R")
+source("RScripts/0_Constants.R")
 
 #### Create crosswalk
 
@@ -230,9 +230,9 @@ write.csv(
 #      StateClassID -> stsim_StateClass   (CoverType:StructuralStage)
 #      Description  -> free text
 sclassDescription <- data.frame(
-  StratumID    = crosswalk$Model_Code,
-  ClassLabelID = crosswalk$Class,
-  StateClassID = paste0(crosswalk$CoverType, ":", crosswalk$StructuralStage),
+  StratumId    = crosswalk$Model_Code,
+  ClassLabelId = crosswalk$Class,
+  StateClassId = paste0(crosswalk$CoverType, ":", crosswalk$StructuralStage),
   Description  = crosswalk$Description,
   stringsAsFactors = FALSE,
   check.names  = FALSE
