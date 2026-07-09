@@ -1,6 +1,6 @@
 #### a202 - TNC LANDFIRE Support
 #### Script by Chloé Debyser
-#### Updated by Caroline Tucker 09/2020 , Carina Firkowski 01/2023, Kerry Roe 06/2026
+#### Updated by Caroline Tucker 09/2020 & Carina Firkowski 01/2023
 
 #### 1. Generate Class Crosswalk
 
@@ -12,7 +12,7 @@
 ################################################################################
 
 #### Load constants
-source("0_Constants.R")
+source("RScripts/0_Constants.R")
 
 #### Create crosswalk
 
@@ -28,7 +28,7 @@ for (i in 1:length(models)) {
     str_split(("\n")) %>%
     # Output is in a list structure we don't need, pluck out the first element
     pluck(1)
-  
+
   # Collect data from lines beginning with "Class ",
   # then omit NAs and missing data
   classPos <- suppressWarnings(which(
@@ -38,10 +38,10 @@ for (i in 1:length(models)) {
       (!is.na(as.numeric(substr(docu, start = 8, stop = 8))))
   ))
   classes <- docu[classPos]
-  
+
   # Search for text descriptions within each Class' section.
   # Use 'Maximum Tree' header as description endpoint;
-  
+
   # Identify start points for description of document as start point.
   # Some documents have extra description header, remove
   descriptionPos <- which(substr(docu, start = 1, stop = 12) == "Description")
@@ -52,7 +52,7 @@ for (i in 1:length(models)) {
   endPos <- maxTreePos <- which(
     substr(docu, start = 1, stop = 12) == "Maximum Tree"
   )
-  
+
   # Some documents have missing "Maximum Tree Size Class" inputs.
   # Identify which entries exist and assign NA accordingly
   # If all expected entries are present, ...
@@ -83,7 +83,7 @@ for (i in 1:length(models)) {
             # and followed by "Class"
             if (
               maxTreePos[maxTreeEntry] > descriptionPos[comparisonEntry] &
-              maxTreePos[maxTreeEntry] < classPos[comparisonEntry + 1]
+                maxTreePos[maxTreeEntry] < classPos[comparisonEntry + 1]
             ) {
               # If so, assign document content to appropriate position, and ...
               maxTree[comparisonEntry] <- docu[maxTreePos[maxTreeEntry]]
@@ -110,7 +110,7 @@ for (i in 1:length(models)) {
       }
     }
   }
-  
+
   # For endPos of descriptionPos, if missing MaxTree endpoints,
   # replace with position of 'Class', 'Model parameters' or 'References' headers
   if (length(endPos) < length(descriptionPos)) {
@@ -136,7 +136,7 @@ for (i in 1:length(models)) {
       endPos[k] <- min(c(maxPosTree, maxPosClass[k]))
     }
   }
-  
+
   # Selecting all description text across multiple lines
   classText <- vector()
   for (k in 1:length(descriptionPos)) {
@@ -152,7 +152,7 @@ for (i in 1:length(models)) {
     }
     classText[k] <- textout
   }
-  
+
   # Compile model crosswalk
   modelCrosswalk <- data.frame(
     Model_Code = models[i],
@@ -163,7 +163,7 @@ for (i in 1:length(models)) {
     Description = classText,
     stringsAsFactors = F
   )
-  
+
   # Add to master crosswalk
   if (i == 1) {
     crosswalk <- modelCrosswalk
@@ -213,33 +213,8 @@ if (!dir.exists(resultsDir)) {
   dir.create(resultsDir)
 }
 
-# 1) Class crosswalk for downstream analysis. Script 2 reads the latest file
-#    matching "ClassCrosswalk" and starts from crosswalk$Model_Code, then builds
-#    StateClassId from CoverType/StructuralStage, so keep the original columns.
 write.csv(
   crosswalk,
   paste0(resultsDir, "ClassCrosswalk-", Sys.Date(), ".csv"),
-  row.names = F
-)
-
-# 2) SyncroSim import file for the landfirevegmodels SuccessionClassDescription
-#    datasheet. Headers match the datasheet column names; values are the lookup
-#    Names, which SyncroSim resolves to Ids on import:
-#      StratumID    -> stsim_Stratum      (Model code)
-#      ClassLabelID -> ClassLabel         (A-E)
-#      StateClassID -> stsim_StateClass   (CoverType:StructuralStage)
-#      Description  -> free text
-sclassDescription <- data.frame(
-  StratumID    = crosswalk$Model_Code,
-  ClassLabelID = crosswalk$Class,
-  StateClassID = paste0(crosswalk$CoverType, ":", crosswalk$StructuralStage),
-  Description  = crosswalk$Description,
-  stringsAsFactors = FALSE,
-  check.names  = FALSE
-)
-
-write.csv(
-  sclassDescription,
-  paste0(resultsDir, "SuccessionClassDescription-", Sys.Date(), ".csv"),
   row.names = F
 )
